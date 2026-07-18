@@ -1,16 +1,21 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSurveys, Survey } from '@/context/SurveyContext';
+import { useRouter } from 'expo-router';
 
 export default function SurveySummary() {
   const { surveys } = useSurveys();
+  const router = useRouter();
   
   // Show only the 3 most recent surveys on the dashboard
   const recentSurveys = surveys.slice(0, 3);
 
   const renderItem = ({ item }: { item: Survey }) => (
-    <View style={styles.surveyItem}>
+    <Pressable 
+      style={({pressed}) => [styles.surveyItem, pressed && { opacity: 0.7 }]}
+      onPress={() => router.push(`/survey-preview?id=${item.id}`)}
+    >
       <View style={styles.iconContainer}>
         <Ionicons name="location" size={20} color="#2b59ff" />
       </View>
@@ -23,7 +28,8 @@ export default function SurveySummary() {
           <Text style={styles.dateText}>{item.date}</Text>
         </View>
       </View>
-    </View>
+      <Ionicons name="chevron-forward" size={16} color="#a0a8bb" />
+    </Pressable>
   );
 
   return (

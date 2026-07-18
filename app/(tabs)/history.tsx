@@ -1,13 +1,18 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, SafeAreaView, Pressable } from 'react-native';
 import { useSurveys, Survey } from '@/context/SurveyContext';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 export default function HistoryScreen() {
   const { surveys } = useSurveys();
+  const router = useRouter();
 
   const renderItem = ({ item }: { item: Survey }) => (
-    <View style={styles.surveyItem}>
+    <Pressable 
+      style={({pressed}) => [styles.surveyItem, pressed && { opacity: 0.7 }]}
+      onPress={() => router.push(`/survey-preview?id=${item.id}`)}
+    >
       <View style={styles.iconContainer}>
         <Ionicons name="document-text" size={24} color="#2b59ff" />
       </View>
@@ -20,7 +25,8 @@ export default function HistoryScreen() {
           <Text style={styles.dateText}>{item.date}</Text>
         </View>
       </View>
-    </View>
+      <Ionicons name="chevron-forward" size={20} color="#a0a8bb" />
+    </Pressable>
   );
 
   return (

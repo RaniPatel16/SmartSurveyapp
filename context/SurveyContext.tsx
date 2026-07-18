@@ -8,6 +8,11 @@ export interface Survey {
   priority: string;
   date: string;
   notes: string;
+  photoUri?: string;
+  contactNumber?: string;
+  latitude?: number;
+  longitude?: number;
+  address?: string;
 }
 
 interface SurveyContextType {
