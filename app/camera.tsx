@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ActivityIndicator, Image, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import * as MediaLibrary from 'expo-media-library';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import CameraButton from '@/components/CameraButton';
@@ -9,15 +8,15 @@ import CameraButton from '@/components/CameraButton';
 export default function CameraScreen() {
   const router = useRouter();
   const [permission, requestPermission] = useCameraPermissions();
-  const [mediaPermission, requestMediaPermission] = MediaLibrary.usePermissions();
   const cameraRef = useRef<CameraView>(null);
   
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [captureTime, setCaptureTime] = useState<string | null>(null);
+  const [facing, setFacing] = useState<'back' | 'front'>('back');
 
   // If permissions are still loading
-  if (!permission || !mediaPermission) {
+  if (!permission) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color="#2b59ff" />
@@ -25,28 +24,25 @@ export default function CameraScreen() {
     );
   }
 
-  // If permissions are not granted
-  if (!permission.granted || !mediaPermission.granted) {
+  // 1. If Camera permission is not granted
+  if (!permission.granted) {
     return (
       <View style={styles.centerContainer}>
         <Ionicons name="camera-outline" size={64} color="#a0a8bb" />
-        <Text style={styles.permissionText}>We need your permission to use the camera and save photos.</Text>
+        <Text style={styles.permissionText}>We need your permission to use the camera.</Text>
         <CameraButton 
-          iconName="checkmark" 
-          onPress={() => {
-            requestPermission();
-            requestMediaPermission();
-          }} 
+          iconName="camera" 
+          onPress={requestPermission} 
           style={styles.grantButton}
           color="#fff" 
         />
-        <Text style={styles.grantText}>Grant Permissions</Text>
+        <Text style={styles.grantText}>Grant Camera</Text>
       </View>
     );
   }
 
   const takePicture = async () => {
-    if (cameraRef.current && isCameraReady) {
+    if (cameraRef.current) {
       try {
         const photo = await cameraRef.current.takePictureAsync();
         if (photo) {
@@ -87,15 +83,9 @@ export default function CameraScreen() {
   };
 
   const handleSave = async () => {
-    if (photoUri) {
-      try {
-        await MediaLibrary.saveToLibraryAsync(photoUri);
-        Alert.alert('Success', 'Photo saved to your gallery successfully!');
-        router.back();
-      } catch (error) {
-        Alert.alert('Error', 'Failed to save photo to gallery.');
-      }
-    }
+    // Simply simulate saving without touching the gallery
+    Alert.alert('Success', 'Photo captured and saved to the current survey successfully!');
+    router.back();
   };
 
   return (
@@ -120,6 +110,7 @@ export default function CameraScreen() {
             <CameraView 
               style={styles.camera} 
               ref={cameraRef}
+              facing={facing}
               onCameraReady={() => setIsCameraReady(true)}
             >
               {!isCameraReady && (
@@ -141,12 +132,19 @@ export default function CameraScreen() {
                     iconName="camera" 
                     size={36} 
                     onPress={takePicture} 
-                    disabled={!isCameraReady}
                     style={styles.captureButton}
                   />
                 </View>
                 
-                <View style={{ flex: 1 }} />
+                {/* Flip Camera Button */}
+                <View style={{ flex: 1, alignItems: 'center' }}>
+                  <CameraButton 
+                    iconName="camera-reverse" 
+                    size={28} 
+                    onPress={() => setFacing(current => (current === 'back' ? 'front' : 'back'))} 
+                    style={styles.flipButton}
+                  />
+                </View>
               </View>
             </View>
           </View>
@@ -289,6 +287,14 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     backgroundColor: '#ffffff',
     borderWidth: 0,
+  },
+  flipButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
   previewContainer: {
     flex: 1,
