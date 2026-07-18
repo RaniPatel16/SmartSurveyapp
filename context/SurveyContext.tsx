@@ -18,6 +18,7 @@ export interface Survey {
 interface SurveyContextType {
   surveys: Survey[];
   addSurvey: (survey: Survey) => void;
+  deleteSurvey: (id: string) => void;
 }
 
 const SurveyContext = createContext<SurveyContextType | undefined>(undefined);
@@ -50,8 +51,12 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
     setSurveys((prevSurveys) => [survey, ...prevSurveys]);
   };
 
+  const deleteSurvey = (id: string) => {
+    setSurveys((prevSurveys) => prevSurveys.filter(survey => survey.id !== id));
+  };
+
   return (
-    <SurveyContext.Provider value={{ surveys, addSurvey }}>
+    <SurveyContext.Provider value={{ surveys, addSurvey, deleteSurvey }}>
       {children}
     </SurveyContext.Provider>
   );

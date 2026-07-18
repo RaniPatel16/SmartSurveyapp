@@ -1,52 +1,116 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, SafeAreaView, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, FlatList, SafeAreaView, TextInput, ScrollView, Pressable, Alert } from 'react-native';
 import { useSurveys, Survey } from '@/context/SurveyContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import SurveyCard from '@/components/SurveyCard';
 
 export default function HistoryScreen() {
-  const { surveys } = useSurveys();
+  const { surveys, deleteSurvey } = useSurveys();
   const router = useRouter();
 
-  const renderItem = ({ item }: { item: Survey }) => (
-    <Pressable 
-      style={({pressed}) => [styles.surveyItem, pressed && { opacity: 0.7 }]}
-      onPress={() => router.push(`/survey-preview?id=${item.id}`)}
-    >
-      <View style={styles.iconContainer}>
-        <Ionicons name="document-text" size={24} color="#2b59ff" />
-      </View>
-      <View style={styles.contentContainer}>
-        <Text style={styles.surveyName}>{item.siteName}</Text>
-        <Text style={styles.clientText}>{item.clientName}</Text>
-        <View style={styles.detailsRow}>
-          <Text style={styles.priorityText}>Priority: {item.priority}</Text>
-          <Text style={styles.dot}>•</Text>
-          <Text style={styles.dateText}>{item.date}</Text>
-        </View>
-      </View>
-      <Ionicons name="chevron-forward" size={20} color="#a0a8bb" />
-    </Pressable>
-  );
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPriority, setSelectedPriority] = useState<string>('All');
+
+  const priorities = ['All', 'High', 'Medium', 'Low'];
+
+  // Filter surveys based on search query AND priority
+  const filteredSurveys = surveys.filter((survey) => {
+    const matchesSearch = 
+      survey.siteName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      survey.clientName.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesPriority = selectedPriority === 'All' || survey.priority === selectedPriority;
+
+    return matchesSearch && matchesPriority;
+  });
+
+  const handleDelete = (id: string) => {
+    Alert.alert(
+      'Delete Survey',
+      'Are you sure you want to permanently delete this survey?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: () => deleteSurvey(id)
+        }
+      ]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <Text style={styles.pageTitle}>Survey History</Text>
-        <Text style={styles.pageSubtitle}>All your saved surveys are listed here.</Text>
+        <Text style={styles.pageSubtitle}>Search, filter, and manage all your saved surveys.</Text>
+        
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color="#697386" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search site or client name..."
+            placeholderTextColor="#a0a8bb"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCorrect={false}
+          />
+          {searchQuery.length > 0 && (
+            <Pressable onPress={() => setSearchQuery('')} style={styles.clearSearchBtn}>
+              <Ionicons name="close-circle" size={18} color="#a0a8bb" />
+            </Pressable>
+          )}
+        </View>
+
+        {/* Priority Filter Chips */}
+        <View style={styles.filterContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+            {priorities.map((priority) => (
+              <Pressable
+                key={priority}
+                style={[
+                  styles.filterChip,
+                  selectedPriority === priority && styles.filterChipActive
+                ]}
+                onPress={() => setSelectedPriority(priority)}
+              >
+                <Text style={[
+                  styles.filterChipText,
+                  selectedPriority === priority && styles.filterChipTextActive
+                ]}>
+                  {priority}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
       </View>
 
-      {surveys.length === 0 ? (
+      {/* FlatList of Surveys */}
+      {filteredSurveys.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="folder-open-outline" size={64} color="#a0a8bb" />
-          <Text style={styles.emptyText}>No surveys found.</Text>
+          <Text style={styles.emptyTitle}>No Surveys Found</Text>
+          <Text style={styles.emptySubtitle}>
+            {surveys.length === 0 
+              ? "You haven't created any surveys yet." 
+              : "No surveys match your search or filter."}
+          </Text>
         </View>
       ) : (
         <FlatList
-          data={surveys}
+          data={filteredSurveys}
           keyExtractor={(item) => item.id}
-          renderItem={renderItem}
           contentContainerStyle={styles.listContainer}
+          renderItem={({ item }) => (
+            <SurveyCard 
+              survey={item} 
+              onPress={() => router.push(`/survey-preview?id=${item.id}`)}
+              onDelete={() => handleDelete(item.id)}
+            />
+          )}
         />
       )}
     </SafeAreaView>
@@ -63,104 +127,87 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#f0f2f5',
+    paddingBottom: 15,
   },
   pageTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '800',
     color: '#1a1f36',
+    marginBottom: 4,
   },
   pageSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#697386',
-    marginTop: 4,
+    marginBottom: 20,
   },
-  listContainer: {
-    padding: 20,
-    gap: 12,
-  },
-  surveyItem: {
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
+    backgroundColor: '#f5f7fa',
     borderRadius: 12,
-    backgroundColor: '#eef2ff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
+    paddingHorizontal: 16,
+    height: 48,
+    marginBottom: 16,
   },
-  contentContainer: {
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
     flex: 1,
-  },
-  surveyName: {
     fontSize: 16,
-    fontWeight: '700',
     color: '#1a1f36',
-    marginBottom: 4,
   },
-  clientText: {
+  clearSearchBtn: {
+    padding: 4,
+  },
+  filterContainer: {
+    flexDirection: 'row',
+  },
+  filterScroll: {
+    gap: 10,
+    paddingRight: 20,
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#f5f7fa',
+    borderWidth: 1,
+    borderColor: '#e3e8f0',
+  },
+  filterChipActive: {
+    backgroundColor: '#2b59ff',
+    borderColor: '#2b59ff',
+  },
+  filterChipText: {
     fontSize: 14,
     color: '#4f566b',
-    marginBottom: 4,
-  },
-  detailsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  priorityText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#2b59ff',
-  },
-  dot: {
-    fontSize: 12,
-    color: '#a0a8bb',
-    marginHorizontal: 6,
-  },
-  dateText: {
-    fontSize: 12,
-    color: '#697386',
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusCompleted: {
-    backgroundColor: '#e3fce3',
-  },
-  statusPending: {
-    backgroundColor: '#fff4e5',
-  },
-  statusText: {
-    fontSize: 12,
     fontWeight: '600',
   },
-  statusTextCompleted: {
-    color: '#0d8246',
+  filterChipTextActive: {
+    color: '#ffffff',
   },
-  statusTextPending: {
-    color: '#c27910',
+  listContainer: {
+    paddingTop: 16,
+    paddingBottom: 40,
   },
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 40,
   },
-  emptyText: {
-    fontSize: 16,
-    color: '#a0a8bb',
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1a1f36',
     marginTop: 16,
-    fontWeight: '500',
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 15,
+    color: '#697386',
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });
