@@ -55,10 +55,8 @@ Make sure you have [Node.js](https://nodejs.org/) installed, and the [Expo Go](h
 
 ---
 
-## 📱 Screenshots
-*(Add your screenshots here!)*
 
----
+
 
 ## 🔐 Permissions Note
 This application requires access to your device's **Camera**, **Location**, and **Contacts** for full functionality. If you deny these permissions, the app will prompt you to enable them in your device settings.
