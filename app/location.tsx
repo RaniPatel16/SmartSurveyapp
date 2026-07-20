@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ActivityIndicator, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ActivityIndicator, Pressable, Alert, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
-import CameraButton from '@/components/CameraButton'; // Reusing this for the back button
+import CameraButton from '@/components/CameraButton'; 
 
 export default function LocationScreen() {
   const router = useRouter();
@@ -20,8 +20,17 @@ export default function LocationScreen() {
     try {
       // 1. Request Permission
       let { status } = await Location.requestForegroundPermissionsAsync();
+      
       if (status !== 'granted') {
-        setErrorMsg('Permission to access location was denied');
+        setErrorMsg('Location permission is blocked by your phone.');
+        Alert.alert(
+          'Permission Blocked',
+          'Your phone is blocking Expo from accessing your real location. You must open your phone Settings and allow Location access.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() }
+          ]
+        );
         setLoading(false);
         return;
       }
@@ -42,7 +51,7 @@ export default function LocationScreen() {
         setAddress(geocodedAddress[0]);
       }
     } catch (error) {
-      setErrorMsg('Failed to fetch location. Please ensure location services are enabled.');
+      setErrorMsg('Failed to fetch real location. Make sure your phone GPS is turned on.');
     } finally {
       setLoading(false);
     }

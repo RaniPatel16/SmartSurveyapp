@@ -41,8 +41,16 @@ export default function SurveyPreviewScreen() {
           text: 'Submit', 
           style: 'default',
           onPress: () => {
-            Alert.alert('Success', 'Survey submitted successfully!');
-            router.navigate('/(tabs)');
+            Alert.alert(
+              'Success', 
+              'Survey submitted successfully!',
+              [
+                { 
+                  text: 'OK', 
+                  onPress: () => router.navigate('/(tabs)') 
+                }
+              ]
+            );
           }
         }
       ]

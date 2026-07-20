@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, ActivityIndicator, Pressable, TextInput, Alert, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, FlatList, ActivityIndicator, Pressable, TextInput, Alert, RefreshControl, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Contacts from 'expo-contacts';
 import * as Clipboard from 'expo-clipboard';
@@ -25,7 +25,15 @@ export default function ContactsScreen() {
       const { status } = await Contacts.requestPermissionsAsync();
       
       if (status !== 'granted') {
-        setErrorMsg('Permission to access contacts was denied.');
+        setErrorMsg('Contacts permission is blocked by your phone.');
+        Alert.alert(
+          'Permission Blocked',
+          'Your phone is blocking Expo from accessing your contacts. You must open your phone Settings and allow Contacts access.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() }
+          ]
+        );
         setPermissionGranted(false);
         setLoading(false);
         setRefreshing(false);
